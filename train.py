@@ -3,19 +3,31 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+import os
+
+"""
+source activate tf_1_12
+export PYTHONPATH=submodule:.
+export LD_LIBRARY_PATH=/cluster/apps/cuda/10.0/lib64:/cluster/apps/cuda/10.0/extras/CUPTI/lib64:/usr/local/cuda-9.1/lib64
+export CUDA_VISIBLE_DEVICES=1
+python train.py
+
+"""
+if not 'CUDA_VISIBLE_DEVICES' in dict(os.environ):
+  print('Does not have CUDA_VISIBLE_DEVICES')
+  os.environ['CUDA_VISIBLE_DEVICES'] = '5'
 
 from datetime import datetime
 import json
-import os
 import shutil
 from timeit import default_timer as timer
-
 import tensorflow as tf
 import numpy as np
 from tensorflow.examples.tutorials.mnist import input_data
 
 from model import Model
 from pgd_attack import LinfPGDAttack
+from utils import redirect_stdout_to_logger
 
 with open('config.json') as config_file:
     config = json.load(config_file)
@@ -51,6 +63,9 @@ attack = LinfPGDAttack(model,
 model_dir = config['model_dir']
 if not os.path.exists(model_dir):
   os.makedirs(model_dir)
+
+logfile = os.path.join(model_dir, 'log_train.txt')
+redirect_stdout_to_logger(logfile)
 
 # We add accuracy and xent twice so we can easily make three types of
 # comparisons in Tensorboard:
