@@ -5,3 +5,7 @@ plot_pgd_adv_acc:
   re_strs:
     - 'nat accuracy (\d*\.\d*)'
     - 'adv accuracy (\d*\.\d*)'
+
+pgd_attack_natural:
+  config_json: '../config.json'
+  model_dir: '../models/natural'

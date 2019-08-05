@@ -6,9 +6,17 @@ the examples in an .npy file.
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
+import os
 import tensorflow as tf
 import numpy as np
+import json
+import sys
+import math
+import argparse
+from easydict import EasyDict
+from tensorflow.examples.tutorials.mnist import input_data
+
+from model import Model
 
 
 class LinfPGDAttack:
@@ -61,17 +69,7 @@ class LinfPGDAttack:
     return x
 
 
-if __name__ == '__main__':
-  import json
-  import sys
-  import math
-
-  from tensorflow.examples.tutorials.mnist import input_data
-
-  from model import Model
-
-  with open('config.json') as config_file:
-    config = json.load(config_file)
+def main(config, datadir='MNIST_data'):
 
   model_file = tf.train.latest_checkpoint(config['model_dir'])
   if model_file is None:
@@ -87,7 +85,7 @@ if __name__ == '__main__':
                          config['loss_func'])
   saver = tf.train.Saver()
 
-  mnist = input_data.read_data_sets('MNIST_data', one_hot=False)
+  mnist = input_data.read_data_sets(datadir, one_hot=False)
 
   with tf.Session() as sess:
     # Restore the checkpoint
@@ -98,7 +96,7 @@ if __name__ == '__main__':
     eval_batch_size = config['eval_batch_size']
     num_batches = int(math.ceil(num_eval_examples / eval_batch_size))
 
-    x_adv = [] # adv accumulator
+    x_adv = []  # adv accumulator
 
     print('Iterating over {} batches'.format(num_batches))
 
@@ -119,3 +117,29 @@ if __name__ == '__main__':
     x_adv = np.concatenate(x_adv, axis=0)
     np.save(path, x_adv)
     print('Examples stored in {}'.format(path))
+
+
+def run(args, myargs):
+  my_config = getattr(myargs.config, args.command)
+
+  with open(my_config.config_json) as config_file:
+    config = json.load(config_file)
+    config = EasyDict(config)
+
+  for k, v in my_config.items():
+    if not hasattr(config, k):
+      print("* config does not have %s"%k)
+    setattr(config, k, v)
+  config['store_adv_path'] = os.path.join(args.outdir, config['store_adv_path'])
+  main(config, datadir='../MNIST_data')
+
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--config_json', type=str, default='config.json')
+  args = parser.parse_args()
+
+  with open(args.config_json) as config_file:
+    config = json.load(config_file)
+  main(config)
+
