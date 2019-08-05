@@ -1,0 +1,7 @@
+plot_pgd_adv_acc:
+  title: 'acc_epoch'
+  logfiles:
+    - '/cluster/home/it_stu39/ZhouPeng/code/mnist_challenge/models/a_very_robust_model/log_train.txt'
+  re_strs:
+    - 'nat accuracy (\d*\.\d*)'
+    - 'adv accuracy (\d*\.\d*)'
