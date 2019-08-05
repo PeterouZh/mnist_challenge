@@ -6,6 +6,30 @@ plot_pgd_adv_acc:
     - 'nat accuracy (\d*\.\d*)'
     - 'adv accuracy (\d*\.\d*)'
 
+# natural model
 pgd_attack_natural:
   config_json: '../config.json'
   model_dir: '../models/natural'
+  store_adv_path: 'attack.npy'
+
+run_attack_natural:
+  config_json: '../config.json'
+  model_dir: '../models/natural'
+  store_adv_path: 'results/test_pgd_attack_natural/attack.npy'
+  saved_y_pred: 'pred.npy'
+
+# adv_trained model
+pgd_attack_adv_trained:
+  config_json: '../config.json'
+  model_dir: '../models/adv_trained'
+  store_adv_path: 'attack.npy'
+
+run_attack_adv_trained:
+  config_json: '../config.json'
+  model_dir: '../models/adv_trained'
+#  model_dir: '../models/natural'
+  store_adv_path: 'results/test_pgd_attack_adv_trained/attack.npy'
+#  store_adv_path: 'results/test_pgd_attack_natural/attack.npy'
+  saved_y_pred: 'pred.npy'
+
+

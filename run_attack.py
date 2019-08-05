@@ -9,7 +9,8 @@ import json
 import math
 import os
 import sys
-import time
+import time, argparse
+from easydict import EasyDict
 
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
@@ -18,8 +19,9 @@ import numpy as np
 
 from model import Model
 
-def run_attack(checkpoint, x_adv, epsilon):
-  mnist = input_data.read_data_sets('MNIST_data', one_hot=False)
+def run_attack(checkpoint, x_adv, epsilon, datadir='MNIST_data',
+               saved_y_pred='pred.npy'):
+  mnist = input_data.read_data_sets(datadir , one_hot=False)
 
   model = Model()
 
@@ -63,17 +65,13 @@ def run_attack(checkpoint, x_adv, epsilon):
 
   accuracy = total_corr / num_eval_examples
 
-  print('Accuracy: {:.2f}%'.format(100.0 * accuracy))
+  print('\nAccuracy: {:.2f}%'.format(100.0 * accuracy))
   y_pred = np.concatenate(y_pred, axis=0)
-  np.save('pred.npy', y_pred)
-  print('Output saved at pred.npy')
+  np.save(saved_y_pred, y_pred)
+  print('Output saved at %s'%saved_y_pred)
 
-if __name__ == '__main__':
-  import json
 
-  with open('config.json') as config_file:
-    config = json.load(config_file)
-
+def main(config, datadir='MNIST_data', saved_y_pred='pred.npy'):
   model_dir = config['model_dir']
 
   checkpoint = tf.train.latest_checkpoint(model_dir)
@@ -84,10 +82,40 @@ if __name__ == '__main__':
   elif x_adv.shape != (10000, 784):
     print('Invalid shape: expected (10000,784), found {}'.format(x_adv.shape))
   elif np.amax(x_adv) > 1.0001 or \
-       np.amin(x_adv) < -0.0001 or \
-       np.isnan(np.amax(x_adv)):
+          np.amin(x_adv) < -0.0001 or \
+          np.isnan(np.amax(x_adv)):
     print('Invalid pixel range. Expected [0, 1], found [{}, {}]'.format(
-                                                              np.amin(x_adv),
-                                                              np.amax(x_adv)))
+      np.amin(x_adv),
+      np.amax(x_adv)))
   else:
-    run_attack(checkpoint, x_adv, config['epsilon'])
+    run_attack(checkpoint, x_adv, config['epsilon'], datadir=datadir,
+               saved_y_pred=saved_y_pred)
+
+
+def run(args, myargs):
+  my_config = getattr(myargs.config, args.command)
+
+  with open(my_config.config_json) as config_file:
+    config = json.load(config_file)
+    config = EasyDict(config)
+
+  for k, v in my_config.items():
+    if not hasattr(config, k):
+      print("* config does not have %s"%k)
+    setattr(config, k, v)
+  saved_y_pred = os.path.join(args.outdir, my_config.saved_y_pred)
+  main(config, datadir='../MNIST_data', saved_y_pred=saved_y_pred)
+
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--config_json', type=str, default='config.json')
+  args = parser.parse_args()
+
+  with open(args.config_json) as config_file:
+    config = json.load(config_file)
+  main(config)
+
+
+
+
